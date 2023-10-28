@@ -169,6 +169,5 @@ async def handle_message(client, message):
     if is_maintenance_mode_enabled() and message.from_user.id != Config.ADMIN:
         # If maintenance mode is enabled and not the admin, reply with a maintenance message
         await message.reply("Sorry, the bot is currently under maintenance. Please try again later.")
-    else:
-        # Handle normal messages here
-        # Your bot's regular message handling logic goes here
+    pass
+ 
