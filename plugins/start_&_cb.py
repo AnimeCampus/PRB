@@ -164,7 +164,7 @@ def is_maintenance_mode_enabled():
     return maintenance_mode
 
 # Command to handle messages
-@Client.on_message(filters.text & ~filters.command)
+@Client.on_message(filters.text & filters.command)
 async def handle_message(client, message):
     if is_maintenance_mode_enabled() and message.from_user.id != Config.ADMIN:
         # If maintenance mode is enabled and not the admin, reply with a maintenance message
