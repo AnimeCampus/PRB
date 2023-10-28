@@ -199,7 +199,7 @@ async def receive_photo(client, message):
 
     # Check if the user is in the process of creating a profile
     if user_id in temp_profile_creation:
-        user_photo = message.photo[-1].file_id
+        user_photo = message.photo.file_id
 
         # Set the user's photo in the temporary data structure
         temp_profile_creation[user_id]["photo"] = user_photo
@@ -207,6 +207,9 @@ async def receive_photo(client, message):
         # Display the user's newly created profile
         caption = f"Name: {temp_profile_creation[user_id]['name']}"
         await message.reply_photo(photo=user_photo, caption=caption)
+
+        # Clear the temporary profile creation data
+        del temp_profile_creation[user_id]
 
         # Clear the temporary profile creation data
         del temp_profile_creation[user_id]
