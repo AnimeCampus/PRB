@@ -147,7 +147,7 @@ async def cb_handler(client, query: CallbackQuery):
 async def toggle_maintenance(client, message):
     global maintenance_mode  # Use the global variable to track maintenance mode
     if len(message.command) > 1:
-        action = message.command[1].lower()
+        action = message.command[1].lower()  # Convert to lowercase here
         if action == "on":
             maintenance_mode = True
             await message.reply("Maintenance mode is now ON. Bot is under maintenance.")
@@ -158,6 +158,7 @@ async def toggle_maintenance(client, message):
             await message.reply("Usage: /maintenance [on|off]")
     else:
         await message.reply("Usage: /maintenance [on|off]")
+
 
 # Function to check if maintenance mode is enabled
 def is_maintenance_mode_enabled():
