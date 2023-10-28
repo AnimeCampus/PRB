@@ -36,19 +36,10 @@ async def process_file(client, message):
     except:
         pass
 
-def is_maintenance_mode_enabled(_, __, update):
-    return Config.MAINTENANCE_MODE
-
 @Client.on_message(filters.private & (filters.document | filters.audio | filters.video))
 async def rename_start(client, message):
     user = message.from_user
     user_id = user.id
-
-    # Check if maintenance mode is enabled
-    if is_maintenance_mode_enabled():
-        # Send a message indicating that the bot is under maintenance
-        await message.reply("Bot is currently under maintenance. Please try again later.")
-        return
 
     # Check if the user is banned
     is_banned = await db.is_user_banned(user_id)
