@@ -208,8 +208,7 @@ async def receive_photo(client, message):
         caption = f"Name: {temp_profile_creation[user_id]['name']}"
         await message.reply_photo(photo=user_photo, caption=caption)
 
-        # Clear the temporary profile creation data
-        del temp_profile_creation[user_id]
+        # Clear the temporary profile creation data if it exists
+        if user_id in temp_profile_creation:
+            del temp_profile_creation[user_id]
 
-        # Clear the temporary profile creation data
-        del temp_profile_creation[user_id]
