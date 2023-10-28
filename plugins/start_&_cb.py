@@ -163,8 +163,12 @@ async def toggle_maintenance(client, message):
 def is_maintenance_mode_enabled():
     return maintenance_mode
 
-# Command to handle messages when maintenance mode is on
-@Client.on_message(filters.text & ~filters.command & ~filters.user(Config.ADMIN) & is_maintenance_mode_enabled)
-async def handle_maintenance_message(client, message):
-    # If not the admin, reply with a maintenance message
-    await message.reply("Sorry, the bot is currently under maintenance. Please try again later.")
+# Command to handle messages
+@Client.on_message(filters.text & ~filters.command)
+async def handle_message(client, message):
+    if is_maintenance_mode_enabled() and message.from_user.id != Config.ADMIN:
+        # If maintenance mode is enabled and not the admin, reply with a maintenance message
+        await message.reply("Sorry, the bot is currently under maintenance. Please try again later.")
+    else:
+        # Handle normal messages here
+        # Your bot's regular message handling logic goes here
