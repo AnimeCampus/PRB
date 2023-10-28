@@ -35,28 +35,31 @@ async def start(client, message):
     user = message.from_user
     user_id = user.id
 
-    # Check if the user is banned
-    is_banned = await db.is_user_banned(user_id)
-
-    if is_banned:
-        # Send a message indicating that the user is banned
-        await message.reply("You are banned by the admin.")
+    # Check if maintenance mode is enabled
+    if is_maintenance_mode_enabled():
+        # Send a message indicating that the bot is under maintenance
+        await message.reply("Bot is currently under maintenance. Please try again later.")
     else:
-        # User is not banned, continue with the regular start message
-        await db.add_user(client, message)
-        button = InlineKeyboardMarkup([[            
-            InlineKeyboardButton("👨‍💻 Devs 👨‍💻", callback_data='dev')
-                ],[
+        # Check if the user is banned
+        is_banned = await db.is_user_banned(user_id)
+
+        if is_banned:
+            # Send a message indicating that the user is banned
+            await message.reply("You are banned by the admin.")
+        else:
+            # User is not banned, continue with the regular start message
+            await db.add_user(client, message)
+            button = InlineKeyboardMarkup([            
+                InlineKeyboardButton("👨‍💻 Devs 👨‍💻", callback_data='dev'),
                 InlineKeyboardButton('🎛 About', callback_data='about'),
-                InlineKeyboardButton('🛠 Help', callback_data='help')
-                ],[               
-                InlineKeyboardButton('📯 Updates', url='https://t.me/Emperors_Network')            
-        ]])
-        
-        # Assuming you have a video file named 'start_video.mp4' in the same directory as your script
-        START_VID = 'https://graph.org/file/e8b7439b7482e3ee0678e.mp4'
-        
-        await message.reply_video(START_VID, caption=Txt.START_TXT.format(user.mention), reply_markup=button)
+                InlineKeyboardButton('🛠 Help', callback_data='help'),
+                InlineKeyboardButton('📯 Updates', url='https://t.me/Emperors_Network')
+            ])
+            
+            # Assuming you have a video file named 'start_video.mp4' in the same directory as your script
+            START_VID = 'https://graph.org/file/e8b7439b7482e3ee0678e.mp4'
+            
+            await message.reply_video(START_VID, caption=Txt.START_TXT.format(user.mention), reply_markup=button)
 
 
 # Add these import statements at the top of your code
