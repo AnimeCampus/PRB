@@ -5,6 +5,8 @@ import re, os, time
 id_pattern = re.compile(r'^.\d+$') 
 
 class Config(object):
+    MAINTENANCE_MODE = False  # Set this to True when maintenance mode is enabled
+    
     # pyro client config
     API_ID    = os.environ.get("API_ID", "16743442")
     API_HASH  = os.environ.get("API_HASH", "12bbd720f4097ba7713c5e40a11dfd2a")
