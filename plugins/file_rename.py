@@ -36,7 +36,7 @@ async def process_file(client, message):
     except:
         pass
 
-def is_maintenance_mode_enabled():
+def is_maintenance_mode_enabled(_, __, ___):
     return Config.MAINTENANCE_MODE
 
 @Client.on_message(filters.private & (filters.document | filters.audio | filters.video))
