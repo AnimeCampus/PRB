@@ -30,9 +30,8 @@ async def remove_admin(client, message):
         await message.reply_text("Please provide the user's ID to remove them as an admin.")
 
   
-def is_maintenance_mode_enabled(_, __, ___):
+def is_maintenance_mode_enabled(_, __, update):
     return Config.MAINTENANCE_MODE
-
 
 @Client.on_message(filters.private & filters.command("start"))
 async def start(client, message):
