@@ -3,7 +3,6 @@ from config import Config
 from .utils import send_log
 
 class Database:
-
     def __init__(self, uri, database_name):
         self._client = motor.motor_asyncio.AsyncIOMotorClient(uri)
         self.db = self._client[database_name]
@@ -15,8 +14,24 @@ class Database:
             'file_id': None,
             'caption': None,
             'is_banned': False,
-            'is_admin': False  # Add a field to track admin status
+            'is_admin': False,
+            'name': None,
+            'photo': None
         }
+
+    async def set_name(self, id, name):
+        await self.col.update_one({'_id': int(id)}, {'$set': {'name': name}})
+
+    async def get_name(self, id):
+        user = await self.col.find_one({'_id': int(id)})
+        return user.get('name', None)
+
+    async def set_photo(self, id, photo):
+        await self.col.update_one({'_id': int(id)}, {'$set': {'photo': photo}})
+
+    async def get_photo(self, id):
+        user = await self.col.find_one({'_id': int(id)})
+        return user.get('photo', None)
 
     async def add_user(self, b, m):
         u = m.from_user
@@ -78,5 +93,7 @@ class Database:
         # Retrieve the list of admin users
         admin_users = self.col.find({'is_admin': True})
         return [user['_id'] async for user in admin_users]
+
+    
 
 db = Database(Config.DB_URL, Config.DB_NAME)
