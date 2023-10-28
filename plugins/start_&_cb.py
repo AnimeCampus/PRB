@@ -142,60 +142,33 @@ async def cb_handler(client, query: CallbackQuery):
             await query.message.continue_propagation()
 
 
-# Command to create or update a user's profile
-@Client.on_message(filters.private & filters.command("cprofile"))
-async def create_or_update_profile(client, message):
-    user = message.from_user
-    user_id = user.id
+maintenance_mode = False  # Initialize maintenance mode as off
 
-    # Check if the user already has a profile
-    user_name = await db.get_name(user_id)
-    user_photo = await db.get_photo(user_id)
-
-    if user_name and user_photo:
-        await message.reply_text("You already have a profile. To update it, send your new name or photo.")
+# Command to toggle maintenance mode
+@Client.on_message(filters.command("maintenance") & filters.user(Config.ADMIN))
+async def toggle_maintenance(client, message):
+    global maintenance_mode  # Use the global variable to track maintenance mode
+    if len(message.command) > 1:
+        action = message.command[1].lower()
+        if action == "on":
+            maintenance_mode = True
+            await message.reply("Maintenance mode is now ON. Bot is under maintenance.")
+        elif action == "off":
+            maintenance_mode = False
+            await message.reply("Maintenance mode is now OFF. Bot is operational.")
+        else:
+            await message.reply("Usage: /maintenance [on|off]")
     else:
-        await message.reply_text("Let's create a new profile. Send your name.")
+        await message.reply("Usage: /maintenance [on|off]")
 
-@Client.on_message(filters.private & filters.text)
-async def receive_name(client, message):
+# Function to check if maintenance mode is enabled
+def is_maintenance_mode_enabled():
+    return maintenance_mode
+
+# Command to handle messages when maintenance mode is on
+@Client.on_message(filters.text & ~filters.command & is_maintenance_mode_enabled)
+async def handle_maintenance_message(client, message):
     user = message.from_user
-    user_id = user.id
-
-    # Check if the user is in the process of creating or updating a profile
-    user_name = message.text
-
-    # Set the user's name in the database
-    await db.set_name(user_id, user_name)
-
-    # Ask the user to send their profile photo
-    await message.reply_text("Great! Now, send your profile photo.")
-
-@Client.on_message(filters.private & filters.photo)
-async def receive_photo(client, message):
-    user = message.from_user
-    user_id = user.id
-
-    # Check if the user is in the process of creating or updating a profile
-    user_photo = message.photo.file_id
-
-    # Set the user's photo in the database
-    await db.set_photo(user_id, user_photo)
-
-    await message.reply_text("Your profile has been created or updated!")
-
-# Command to display a user's profile
-@Client.on_message(filters.private & filters.command("profile"))
-async def display_profile(client, message):
-    user = message.from_user
-    user_id = user.id
-
-    # Check if the user has a name and photo in the database
-    user_name = await db.get_name(user_id)
-    user_photo = await db.get_photo(user_id)
-
-    if user_name and user_photo:
-        caption = f"Name: {user_name}\n"
-        await message.reply_photo(photo=user_photo, caption=caption)
-    else:
-        await message.reply_text("You don't have a profile set. Create or update it using /cprofile.")
+    if user.id != Config.ADMIN:
+        # If not the admin, reply with a maintenance message
+        await message.reply("Sorry, the bot is currently under maintenance. Please try again later.")
