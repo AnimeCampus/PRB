@@ -29,20 +29,11 @@ async def remove_admin(client, message):
     else:
         await message.reply_text("Please provide the user's ID to remove them as an admin.")
 
-  
-def is_maintenance_mode_enabled(_, __, update):
-    return Config.MAINTENANCE_MODE
-
 @Client.on_message(filters.private & filters.command("start"))
 async def start(client, message):
     user = message.from_user
     user_id = user.id
 
-    # Check if maintenance mode is enabled
-    if is_maintenance_mode_enabled():
-        # Send a message indicating that the bot is under maintenance
-        await message.reply("Bot is currently under maintenance. Please try again later.")
-    else:
         # Check if the user is banned
         is_banned = await db.is_user_banned(user_id)
 
