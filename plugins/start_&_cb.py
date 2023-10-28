@@ -152,20 +152,20 @@ async def user_profile(client, message):
     user_photo = await db.get_photo(user_id)
 
     if user_name and user_photo:
-        # Create a caption with the user's name
         caption = f"Name: {user_name}\n"
-        
-        # Send the user's profile photo with the caption
         await message.reply_photo(photo=user_photo, caption=caption)
     else:
         await message.reply_text("You don't have a profile set. Create a new profile using /cprofile.")
+        
+# Define a dictionary to track ongoing profile creation
+temp_profile_creation = {}
 
 @Client.on_message(filters.private & filters.command("cprofile"))
 async def create_profile(client, message):
     user = message.from_user
     user_id = user.id
 
-    # Check if the user already has a profile set
+    # Check if the user already has a name and photo
     user_name = await db.get_name(user_id)
     user_photo = await db.get_photo(user_id)
 
@@ -175,7 +175,7 @@ async def create_profile(client, message):
         await message.reply_text("Let's create a new profile. Send your name.")
 
         # Store the user ID to track the ongoing profile creation
-        db.set_temp_profile_creation(user_id)
+        temp_profile_creation[user_id] = {"name": None, "photo": None}
 
 @Client.on_message(filters.private & filters.text)
 async def receive_name(client, message):
@@ -183,11 +183,11 @@ async def receive_name(client, message):
     user_id = user.id
 
     # Check if the user is in the process of creating a profile
-    if db.is_temp_profile_creation(user_id):
+    if user_id in temp_profile_creation:
         user_name = message.text
 
-        # Set the user's name in the database
-        await db.set_name(user_id, user_name)
+        # Set the user's name in the temporary data structure
+        temp_profile_creation[user_id]["name"] = user_name
 
         # Ask the user to send their profile photo
         await message.reply_text("Great! Now, send your profile photo.")
@@ -198,14 +198,15 @@ async def receive_photo(client, message):
     user_id = user.id
 
     # Check if the user is in the process of creating a profile
-    if db.is_temp_profile_creation(user_id):
+    if user_id in temp_profile_creation:
         user_photo = message.photo[-1].file_id
 
-        # Set the user's photo in the database
-        await db.set_photo(user_id, user_photo)
+        # Set the user's photo in the temporary data structure
+        temp_profile_creation[user_id]["photo"] = user_photo
 
-        await message.reply_text("Your profile has been created!")
+        # Display the user's newly created profile
+        caption = f"Name: {temp_profile_creation[user_id]['name']}"
+        await message.reply_photo(photo=user_photo, caption=caption)
 
-        # You can also display the user's newly set profile here
-    
-
+        # Clear the temporary profile creation data
+        del temp_profile_creation[user_id]
