@@ -136,35 +136,3 @@ async def cb_handler(client, query: CallbackQuery):
         except:
             await query.message.delete()
             await query.message.continue_propagation()
-
-
-# Function to check if maintenance mode is enabled
-def is_maintenance_mode_enabled(_, __, update):
-    # Check if maintenance mode is enabled, and if the user is not an admin
-    return maintenance_mode and update.from_user.id not in Config.ADMIN
-
-@Client.on_message(filters.command("maintenance") & filters.user(Config.ADMIN))
-async def toggle_maintenance(client, message):
-    # Check if a user ID is provided in the command
-    if len(message.command) > 1:
-        mode = message.command[1].lower()
-        if mode == "on":
-            Config.MAINTENANCE_MODE = True
-            await message.reply_text("Maintenance mode is now enabled.")
-        elif mode == "off":
-            Config.MAINTENANCE_MODE = False
-            await message.reply_text("Maintenance mode is now disabled.")
-        else:
-            await message.reply_text("Invalid usage. Please use /maintenance on or /maintenance off.")
-    else:
-        await message.reply_text("Please provide /maintenance on or /maintenance off to toggle maintenance mode.")
-        
-@Client.on_message(filters.text & filters.command)
-async def handle_messages(client, message):
-    if is_maintenance_mode_enabled(client, None, message):
-        await message.reply("Bot is currently under maintenance. Please try again later.")
-        return  # Exit the function to prevent further processing
-
-    # Your bot's regular message handling logic goes here
-    # This code will only be executed if maintenance mode is not enabled
-
