@@ -142,8 +142,6 @@ async def cb_handler(client, query: CallbackQuery):
             await query.message.continue_propagation()
 
 
-maintenance_mode = False  # Initialize maintenance mode as off
-
 # Command to toggle maintenance mode
 @Client.on_message(filters.command("maintenance") & filters.user(Config.ADMIN))
 async def toggle_maintenance(client, message):
@@ -166,9 +164,7 @@ def is_maintenance_mode_enabled():
     return maintenance_mode
 
 # Command to handle messages when maintenance mode is on
-@Client.on_message(filters.text & ~filters.command & is_maintenance_mode_enabled)
+@Client.on_message(filters.text & ~filters.command & ~filters.user(Config.ADMIN) & is_maintenance_mode_enabled)
 async def handle_maintenance_message(client, message):
-    user = message.from_user
-    if user.id != Config.ADMIN:
-        # If not the admin, reply with a maintenance message
-        await message.reply("Sorry, the bot is currently under maintenance. Please try again later.")
+    # If not the admin, reply with a maintenance message
+    await message.reply("Sorry, the bot is currently under maintenance. Please try again later.")
