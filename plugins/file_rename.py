@@ -36,9 +36,12 @@ async def process_file(client, message):
     except:
         pass
 
+def is_maintenance_mode_enabled():
+    return Config.MAINTENANCE_MODE
+
 @Client.on_message(filters.private & (filters.document | filters.audio | filters.video))
 async def rename_start(client, message):
-    user = message.from_user
+    user = message from_user
     user_id = user.id
 
     # Check if maintenance mode is enabled
@@ -61,6 +64,7 @@ async def rename_start(client, message):
             user_id = user.id  # Refresh the user's ID
 
         await process_file(client, message)
+
 
 @Client.on_message(filters.private & filters.reply)
 async def refunc(client, message):
