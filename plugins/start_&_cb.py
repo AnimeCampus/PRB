@@ -157,23 +157,19 @@ async def create_or_update_profile(client, message):
     else:
         await message.reply_text("Let's create a new profile. Send your name.")
 
-    # Store the user ID to track the ongoing profile creation
-    db.set_temp_profile_creation(user_id)
-
 @Client.on_message(filters.private & filters.text)
 async def receive_name(client, message):
     user = message.from_user
     user_id = user.id
 
     # Check if the user is in the process of creating or updating a profile
-    if db.is_temp_profile_creation(user_id):
-        user_name = message.text
+    user_name = message.text
 
-        # Set the user's name in the database
-        await db.set_name(user_id, user_name)
+    # Set the user's name in the database
+    await db.set_name(user_id, user_name)
 
-        # Ask the user to send their profile photo
-        await message.reply_text("Great! Now, send your profile photo.")
+    # Ask the user to send their profile photo
+    await message.reply_text("Great! Now, send your profile photo.")
 
 @Client.on_message(filters.private & filters.photo)
 async def receive_photo(client, message):
@@ -181,16 +177,12 @@ async def receive_photo(client, message):
     user_id = user.id
 
     # Check if the user is in the process of creating or updating a profile
-    if db.is_temp_profile_creation(user_id):
-        user_photo = message.photo.file_id
+    user_photo = message.photo.file_id
 
-        # Set the user's photo in the database
-        await db.set_photo(user_id, user_photo)
+    # Set the user's photo in the database
+    await db.set_photo(user_id, user_photo)
 
-        await message.reply_text("Your profile has been created or updated!")
-
-        # Clear the temporary profile creation flag
-        db.clear_temp_profile_creation(user_id)
+    await message.reply_text("Your profile has been created or updated!")
 
 # Command to display a user's profile
 @Client.on_message(filters.private & filters.command("profile"))
