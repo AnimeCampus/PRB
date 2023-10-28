@@ -61,7 +61,6 @@ async def start(client, message):
             
             await message.reply_video(START_VID, caption=Txt.START_TXT.format(user.mention), reply_markup=button)
 
-
 # Add these import statements at the top of your code
 from pyrogram.types import Message
 
@@ -150,29 +149,28 @@ def is_maintenance_mode_enabled(_, __, update):
     # Check if maintenance mode is enabled, and if the user is not an admin
     return maintenance_mode and update.from_user.id not in Config.ADMIN
 
-# Command to toggle maintenance mode
 @Client.on_message(filters.command("maintenance") & filters.user(Config.ADMIN))
 async def toggle_maintenance(client, message):
-    global maintenance_mode  # Use the global variable to track maintenance mode
+    # Check if a user ID is provided in the command
     if len(message.command) > 1:
-        action = message.command[1].lower()
-        if action == "on":
-            maintenance_mode = True
-            await message.reply("Maintenance mode is now ON. Bot is under maintenance.")
-        elif action == "off":
-            maintenance_mode = False
-            await message.reply("Maintenance mode is now OFF. Bot is operational.")
+        mode = message.command[1].lower()
+        if mode == "on":
+            Config.MAINTENANCE_MODE = True
+            await message.reply_text("Maintenance mode is now enabled.")
+        elif mode == "off":
+            Config.MAINTENANCE_MODE = False
+            await message.reply_text("Maintenance mode is now disabled.")
         else:
-            await message.reply("Usage: /maintenance [on|off]")
+            await message.reply_text("Invalid usage. Please use /maintenance on or /maintenance off.")
     else:
-        await message.reply("Usage: /maintenance [on|off]")
-
-# Regular message handling logic
+        await message.reply_text("Please provide /maintenance on or /maintenance off to toggle maintenance mode.")
+        
 @Client.on_message(filters.text & filters.command)
 async def handle_messages(client, message):
     if is_maintenance_mode_enabled(client, None, message):
         await message.reply("Bot is currently under maintenance. Please try again later.")
-        pass
-        
+        return  # Exit the function to prevent further processing
 
     # Your bot's regular message handling logic goes here
+    # This code will only be executed if maintenance mode is not enabled
+
