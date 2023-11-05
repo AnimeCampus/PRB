@@ -3,6 +3,7 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import time
+from config import Config
 
 @Client.on_message(filters.command("speedtest") & filters.user(Config.ADMIN))
 async def run_speedtest(client: Client, message: Message):
