@@ -1,16 +1,16 @@
-from pyrogram import Client, filters
-from pyrogram.enums import MessageMediaType
-from pyrogram.errors import FloodWait
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ForceReply
+import re
+import os
+import time
+import asyncio
 from hachoir.metadata import extractMetadata
 from hachoir.parser import createParser
-import re  # Import for regular expressions
-import os, time
 from PIL import Image
-from config import Config
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.errors import FloodWait
+from config import Config  # Replace with your configuration
 from helper.utils import progress_for_pyrogram, convert, humanbytes
 from helper.database import db
-from asyncio import sleep
 
 # Function to extract 'episode' and 'quality' from user input
 def extract_episode_quality(input_text):
@@ -31,16 +31,20 @@ async def rename_media_file(client, message, episode, quality):
     extn = file.file_name.rsplit('.', 1)[-1] if "." in file.file_name else "mkv"
     new_name = new_filename + "." + extn
 
-    await message.reply_text(
-        text=f"**Select the output of file**\n**• File name:-**```{new_name}```",
-        reply_to_message_id=message.id,
-        reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("📁 Document", callback_data="upload_document")]]
-        )
-    )
+    # Rename the media file
+    # You can implement the file renaming logic here
+    # This is just a placeholder
+    renamed_file_path = f"downloads/{new_name}"
 
-@Client.on_message(filters.private & (filters.document | filters.audio | filters.video))
-async def rename_start(client, message):
+    # Move or rename the file to the new path
+    os.rename(file.file_path, renamed_file_path)
+
+    # Now you have the renamed file in 'renamed_file_path'
+    # You can process and upload it as needed
+
+# Bot command to initiate auto-renaming
+@app.on_message(filters.command("Autorename", prefixes="/"))
+async def auto_rename_files(client, message):
     user = message.from_user
     user_id = user.id
 
@@ -55,32 +59,27 @@ async def rename_start(client, message):
             user = await client.get_users(user_id)
             user_id = user.id
 
-        # Extract 'episode' and 'quality' from the provided file name
-        input_text = message.caption if message.caption else message.text
-        episode, quality = extract_episode_quality(input_text)
+        # Extract 'episode' and 'quality' from the command arguments
+        command_parts = message.text.split(" ")
+        if len(command_parts) < 3:
+            await message.reply("Invalid command format. Please use: /Autorename episode quality")
+            return
+
+        episode = command_parts[1]
+        quality = command_parts[2]
 
         # Rename the media file
         await rename_media_file(client, message, episode, quality)
 
-# Function to process the renamed media file
-async def process_renamed_file(client, message, new_name, episode, quality):
-    file = getattr(message, message.media.value)
-    media = getattr(file, file.media.value)
-
-    new_filename = f"{new_name} {episode}-{quality}"
-    extn = file.file_name.rsplit('.', 1)[-1] if "." in file.file_name else "mkv"
-    new_name = new_filename + "." + extn
-
-    # You can implement the file downloading, processing, and uploading here
-
-@Client.on_callback_query(filters.regex("upload"))
+# Callback to handle document upload
+@app.on_callback_query(filters.regex("upload_document"))
 async def doc(bot, update):
     new_name = update.message.text
     new_filename = new_name.split(":-")[1]
     file_path = f"downloads/{new_filename}"
     file = update.message.reply_to_message
 
-    ms = await update.message.edit("Trying to downloading....")
+    ms = await update.message.edit("Trying to download....")
     try:
         path = await bot.download_media(message=file, file_name=file_path, progress=progress_for_pyrogram, progress_args=("Download started....", ms, time.time()))
     except Exception as e:
@@ -89,8 +88,8 @@ async def doc(bot, update):
     duration = 0
     try:
         metadata = extractMetadata(createParser(file_path))
-        if metadata.has("duration"):
-            duration = metadata.get('duration').seconds
+        if metadata has "duration":
+            duration = metadata.get("duration").seconds
     except:
         pass
 
@@ -104,7 +103,7 @@ async def doc(bot, update):
         try:
             caption = c_caption.format(filename=new_filename, filesize=humanbytes(media.file_size), duration=convert(duration))
         except Exception as e:
-            return await ms.edit(text=f"Your caption error except keyword Arguments●> ({e})")
+            return await ms.edit(text=f"Your caption error except keyword Arguments●> ({e}")
     else:
         caption = f"**{new_filename}"
 
@@ -118,7 +117,7 @@ async def doc(bot, update):
         img.resize((320, 320))
         img.save(ph_path, "JPEG")
 
-    await ms.edit("Trying to uploading....")
+    await ms.edit("Trying to upload....")
     type = update.data.split("_")[1]
     try:
         if type == "document":
@@ -159,5 +158,3 @@ async def doc(bot, update):
         os.remove(ph_path)
 
 # Your other code (e.g., main function and setup) can remain the same
-
-# Replace the placeholders in this code with your actual logic for downloading, processing, and uploading files.
