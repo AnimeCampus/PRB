@@ -5,7 +5,7 @@ from config import Config, Txt
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-async def progress_for_pyrogram(current, total, ud_type, message, start):
+async def progress_for_pyrogram(current, total, ud_type, message, start, custom_info):
     now = time.time()
     diff = now - start
     percentage = current * 100 / total
@@ -19,14 +19,14 @@ async def progress_for_pyrogram(current, total, ud_type, message, start):
         elapsed_time = TimeFormatter(milliseconds=elapsed_time)
         estimated_total_time = TimeFormatter(milliseconds=estimated_total_time)
 
-        progress_text = (
-            f"{ud_type}\n\n"
-            f"{round(percentage, 2)}%\n"
-            f"Completed: {humanbytes(current)} / {humanbytes(total)}\n"
-            f"Speed: {humanbytes(speed)}/s\n"
-            f"Elapsed Time: {elapsed_time}\n"
-            f"Estimated Time: {estimated_total_time if estimated_total_time else '0 s'}"
-        )
+        # Build a custom message with additional information in the provided format
+        progress_text = Txt.PROGRESS_BAR.format(
+            round(percentage, 2),
+            humanbytes(current),
+            humanbytes(total),
+            humanbytes(speed),
+            estimated_total_time if estimated_total_time else '0 s'
+        ) + f"\n🌟 {custom_info}"
 
         try:
             await message.edit(
@@ -35,6 +35,8 @@ async def progress_for_pyrogram(current, total, ud_type, message, start):
             )
         except:
             pass
+
+
 
 def humanbytes(size):    
     if not size:
