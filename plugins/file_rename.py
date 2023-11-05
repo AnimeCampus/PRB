@@ -79,8 +79,18 @@ async def auto_rename_files(client, message):
 @Client.on_callback_query(filters.regex("upload_document"))
 async def doc(bot, update):
     new_name = update.message.text
-    new_filename = new_name.split(":-")[1]
+    split_name = new_name.split(":-")
+    
+    if len(split_name) >= 2:
+        new_filename = split_name[1]
+    else:
+        new_filename = "unknown_filename"
+    
     file_path = f"downloads/{new_filename}"
+
+    # Rest of your code
+    # ...
+
     file = update.message.reply_to_message
 
     ms = await update.message.edit("Trying to download....")
