@@ -43,7 +43,7 @@ async def rename_media_file(client, message, episode, quality):
     # You can process and upload it as needed
 
 # Bot command to initiate auto-renaming
-@app.on_message(filters.command("Autorename", prefixes="/"))
+@Client.on_message(filters.command("Autorename", prefixes="/"))
 async def auto_rename_files(client, message):
     user = message.from_user
     user_id = user.id
@@ -72,7 +72,7 @@ async def auto_rename_files(client, message):
         await rename_media_file(client, message, episode, quality)
 
 # Callback to handle document upload
-@app.on_callback_query(filters.regex("upload_document"))
+@Client.on_callback_query(filters.regex("upload_document"))
 async def doc(bot, update):
     new_name = update.message.text
     new_filename = new_name.split(":-")[1]
