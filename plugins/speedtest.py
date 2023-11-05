@@ -12,6 +12,9 @@ async def run_speedtest(client: Client, message: Message):
     try:
         st = speedtest.Speedtest()
         st.get_best_server()
+        download_speed = st.download() / 1024 / 1024  # Convert to Mbps
+        upload_speed = st.upload() / 1024 / 1024  # Convert to Mbps
+        ping = st.results.ping
         result = st.results.dict()
     except Exception as e:
         await m.edit(str(e))  # Convert exception to string before editing
@@ -65,10 +68,10 @@ def get_speedtest_results():
     try:
         st = speedtest.Speedtest()
         st.get_best_server()
+        download_speed = st.download() / 1024 / 1024
+        upload_speed = st.upload() / 1024 / 1024
+        ping = st.results.ping
         result = st.results.dict()
-        download_speed = result["download"] / 1024 / 1024
-        upload_speed = result["upload"] / 1024 / 1024
-        ping = result["ping"]
         isp = result["client"]["isp"]
         country = result["client"]["country"]
         server_name = result["server"]["name"]
