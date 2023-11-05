@@ -1,99 +1,112 @@
-import re
-import os
-import time
-import asyncio
+from pyrogram import Client, filters
+from pyrogram.enums import MessageMediaType
+from pyrogram.errors import FloodWait
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ForceReply
 from hachoir.metadata import extractMetadata
 from hachoir.parser import createParser
-from PIL import Image
-from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from pyrogram.errors import FloodWait
-from config import Config  # Replace with your configuration
+from config import Config
 from helper.utils import progress_for_pyrogram, convert, humanbytes
 from helper.database import db
+from asyncio import sleep
+from PIL import Image
+import os, time
+#from helper.renamedb import increment_rename_count, get_rename_count
 
-# Function to extract 'episode' and 'quality' from user input
-def extract_episode_quality(input_text):
-    episode = re.search(r'(\d+)-episode', input_text, re.IGNORECASE)
-    quality = re.search(r'\[([^\]]+)\]', input_text)
+async def process_file(client, message):
+    file = getattr(message, message.media.value)
+    filename = file.file_name
 
-    episode_value = episode.group(1) if episode else "01"
-    quality_value = quality.group(1) if quality else "HD"
+    if file.file_size > 2000 * 1024 * 1024:
+        await message.reply_text("Sorry, this bot doesn't support uploading files bigger than 2GB.")
+        return
 
-    return episode_value, quality_value
+    try:
+        await message.reply_text(
+            text=f"**__Please enter a new file name...__**\n\n**Old File Name** :- `{filename}`",
+            reply_to_message_id=message.id,
+            reply_markup=ForceReply(True)
+        )
+        await sleep(30)
+    except FloodWait as e:
+        await sleep(e.value)
+        await message.reply_text(
+            text=f"**__Please enter a new file name...__**\n\n**Old File Name** :- `{filename}`",
+            reply_to_message_id=message.id,
+            reply_markup=ForceReply(True)
+		)
+    except:
+        pass
 
-# Function to rename media files
-async def rename_media_file(client, message, episode, quality):
-    if message.media:
-        file = getattr(message, message.media)
-        media = getattr(file, file.media)
 
-        new_filename = f"{file.file_name} {episode}-{quality}"
-        extn = file.file_name.rsplit('.', 1)[-1] if "." in file.file_name else "mkv"
-        new_name = new_filename + "." + extn
+# Rest of your code...
 
-        # Rename the media file (add your custom renaming logic here)
-        renamed_file_path = f"downloads/{new_name}"
-        os.rename(file.file_path, renamed_file_path)
-
-        # Now you have the renamed file in 'renamed_file_path'
-        # You can process and upload it as needed
-
-# Bot command to initiate auto-renaming
-@Client.on_message(filters.command("Autorename", prefixes="/"))
-async def auto_rename_files(client, message):
+@Client.on_message(filters.private & (filters.document | filters.audio | filters.video))
+async def rename_start(client, message):
     user = message.from_user
     user_id = user.id
 
+    # Check if the user is banned
     is_banned = await db.is_user_banned(user_id)
 
     if is_banned:
+        # Send a message indicating that the user is banned
         await message.reply_text("You are banned by the admin.")
     else:
         while not await db.is_user_admin(user_id):
             await message.reply_text("You are not authorized to use this feature. To gain authorization, please message owner @BIackHatDev")
-            await asyncio.sleep(60)
+            await asyncio.sleep(60)  # Wait for a minute before checking again
             user = await client.get_users(user_id)
-            user_id = user.id
+            user_id = user.id  # Refresh the user's ID
 
-        # Extract 'episode' and 'quality' from the command arguments
-        command_parts = message.text.split(" ")
-        if len(command_parts) < 3:
-            await message.reply("Invalid command format. Please use: /Autorename episode quality")
-            return
+        # Call the function to increment the rename count
+    #    await increment_rename_count(user_id)
 
-        episode = command_parts[1]
-        quality = command_parts[2]
+        # Start the file renaming process
+        await process_file(client, message)
 
-        # Create a callback query button for uploading documents
-        keyboard = [
-            [InlineKeyboardButton("📁 Document", callback_data="upload_document")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        # Reply to the message with the button
-        await message.reply_text("Select the output of file", reply_markup=reply_markup)
+@Client.on_message(filters.command("rinfo"))
+async def show_rename_count(client, message):
+    user_id = message.from_user.id
+  #  rename_count = await get_rename_count(user_id)
+    await message.reply_text(f"You have renamed {rename_count} files.")
 
 
-# Callback to handle document upload
-@Client.on_callback_query(filters.regex("upload_document"))
+@Client.on_message(filters.private & filters.reply)
+async def refunc(client, message):
+    reply_message = message.reply_to_message
+    if (reply_message.reply_markup) and isinstance(reply_message.reply_markup, ForceReply):
+        new_name = message.text
+        await message.delete()
+        msg = await client.get_messages(message.chat.id, reply_message.id)
+        file = msg.reply_to_message
+        media = getattr(file, file.media.value)
+        if not "." in new_name:
+            if "." in media.file_name:
+                extn = media.file_name.rsplit('.', 1)[-1]
+            else:
+                extn = "mkv"
+            new_name = new_name + "." + extn
+        await reply_message.delete()
+
+        button = [[InlineKeyboardButton("📁 Document", callback_data="upload_document")]]
+        if file.media in [MessageMediaType.VIDEO, MessageMediaType.DOCUMENT]:
+            button.append([InlineKeyboardButton("🎥 Video", callback_data="upload_video")])
+        elif file.media == MessageMediaType.AUDIO:
+            button.append([InlineKeyboardButton("🎵 Audio", callback_data="upload_audio")])
+        await message.reply(
+            text=f"**Select the output of file**\n**• File name:-**```{new_name}```",
+            reply_to_message_id=file.id,
+            reply_markup=InlineKeyboardMarkup(button)
+        )
+
+@Client.on_callback_query(filters.regex("upload"))
 async def doc(bot, update):
     new_name = update.message.text
-    split_name = new_name.split(":-")
-    
-    if len(split_name) >= 2:
-        new_filename = split_name[1]
-    else:
-        new_filename = "unknown_filename"
-    
+    new_filename = new_name.split(":-")[1]
     file_path = f"downloads/{new_filename}"
-
-    # Rest of your code
-    # ...
-
     file = update.message.reply_to_message
 
-    ms = await update.message.edit("Trying to download....")
+    ms = await update.message.edit("Trying to downloading....")
     try:
         path = await bot.download_media(message=file, file_name=file_path, progress=progress_for_pyrogram, progress_args=("Download started....", ms, time.time()))
     except Exception as e:
@@ -102,14 +115,13 @@ async def doc(bot, update):
     duration = 0
     try:
         metadata = extractMetadata(createParser(file_path))
-        if "duration" in metadata:
-            duration = metadata.get("duration").seconds
+        if metadata.has("duration"):
+            duration = metadata.get('duration').seconds
     except:
         pass
-
     ph_path = None
     user_id = int(update.message.chat.id)
-    media = getattr(file, file.media)
+    media = getattr(file, file.media.value)
     c_caption = await db.get_caption(update.message.chat.id)
     c_thumb = await db.get_thumbnail(update.message.chat.id)
 
@@ -117,21 +129,21 @@ async def doc(bot, update):
         try:
             caption = c_caption.format(filename=new_filename, filesize=humanbytes(media.file_size), duration=convert(duration))
         except Exception as e:
-            return await ms.edit(text=f"Your caption error except keyword Arguments●> ({e}")
+            return await ms.edit(text=f"Your caption error except keyword Arguments●> ({e})")
     else:
-        caption = f"**{new_filename}"
+        caption = f"**{new_filename}**"
 
     if (media.thumbs or c_thumb):
         if c_thumb:
             ph_path = await bot.download_media(c_thumb)
         else:
-            ph_path = await bot.download_media(media.thumbs[0].file)
+            ph_path = await bot.download_media(media.thumbs[0].file_id)
         Image.open(ph_path).convert("RGB").save(ph_path)
         img = Image.open(ph_path)
         img.resize((320, 320))
         img.save(ph_path, "JPEG")
 
-    await ms.edit("Trying to upload....")
+    await ms.edit("Trying to uploading....")
     type = update.data.split("_")[1]
     try:
         if type == "document":
@@ -171,4 +183,4 @@ async def doc(bot, update):
     if ph_path:
         os.remove(ph_path)
 
-# Your other code (e.g., main function and setup) can remain the same
+   
