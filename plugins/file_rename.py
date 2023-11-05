@@ -25,26 +25,19 @@ def extract_episode_quality(input_text):
 # Function to rename media files
 async def rename_media_file(client, message, episode, quality):
     if message.media:
-        file = getattr(message, message.media.value)
-        media = getattr(file, file.media.value)
+        file = getattr(message, message.media)
+        media = getattr(file, file.media)
 
         new_filename = f"{file.file_name} {episode}-{quality}"
         extn = file.file_name.rsplit('.', 1)[-1] if "." in file.file_name else "mkv"
         new_name = new_filename + "." + extn
 
-        # Rename the media file
-        # You can implement the file renaming logic here
-        # This is just a placeholder
+        # Rename the media file (add your custom renaming logic here)
         renamed_file_path = f"downloads/{new_name}"
-
-        # Move or rename the file to the new path
         os.rename(file.file_path, renamed_file_path)
 
         # Now you have the renamed file in 'renamed_file_path'
         # You can process and upload it as needed
-    else:
-        print("The message does not contain media.")
-
 
 # Bot command to initiate auto-renaming
 @Client.on_message(filters.command("Autorename", prefixes="/"))
@@ -72,8 +65,15 @@ async def auto_rename_files(client, message):
         episode = command_parts[1]
         quality = command_parts[2]
 
-        # Rename the media file
-        await rename_media_file(client, message, episode, quality)
+        # Create a callback query button for uploading documents
+        keyboard = [
+            [InlineKeyboardButton("📁 Document", callback_data="upload_document")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        # Reply to the message with the button
+        await message.reply_text("Select the output of file", reply_markup=reply_markup)
+
 
 # Callback to handle document upload
 @Client.on_callback_query(filters.regex("upload_document"))
@@ -99,7 +99,7 @@ async def doc(bot, update):
 
     ph_path = None
     user_id = int(update.message.chat.id)
-    media = getattr(file, file.media.value)
+    media = getattr(file, file.media)
     c_caption = await db.get_caption(update.message.chat.id)
     c_thumb = await db.get_thumbnail(update.message.chat.id)
 
@@ -115,7 +115,7 @@ async def doc(bot, update):
         if c_thumb:
             ph_path = await bot.download_media(c_thumb)
         else:
-            ph_path = await bot.download_media(media.thumbs[0].file_id)
+            ph_path = await bot.download_media(media.thumbs[0].file)
         Image.open(ph_path).convert("RGB").save(ph_path)
         img = Image.open(ph_path)
         img.resize((320, 320))
