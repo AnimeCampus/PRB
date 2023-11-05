@@ -36,11 +36,16 @@ async def get_stats(bot, message):
     total_users = await db.total_users_count()
     uptime = time.strftime("%Hh%Mm%Ss", time.gmtime(time.time() - bot.uptime))    
     start_t = time.time()
-    st = await message.reply('**Aᴄᴄᴇꜱꜱɪɴɢ Tʜᴇ Dᴇᴛᴀɪʟꜱ.....**')    
+    st = await message.reply('**Aᴄᴄᴇꜱ꜡ɪɴɢ Tʜᴇ Dᴇᴛᴀɪʟ꜕.....**')    
     end_t = time.time()
     time_taken_s = (end_t - start_t) * 1000
-    await st.edit(text=f"**--Bᴏᴛ Sᴛᴀᴛᴜꜱ--** \n\n**⌚️ Bᴏᴛ Uᴩᴛɪᴍᴇ:** {uptime} \n**🐌 Cᴜʀʀᴇɴᴛ Pɪɴɢ:** `{time_taken_s:.3f} ᴍꜱ` \n**👭 Tᴏᴛᴀʟ Uꜱᴇʀꜱ:** `{total_users}`")
+    unique_message = "🚀 Bot is running smoothly! 🚀"  # Add your unique message here
+    additional_info = "**🌟 Additional Information:**"
+    version = "🔵 Bot Version: KH 1.4.0"
+    support = "📧 Support Email: blackhatdevv@gmail.com"
+    website = "🌐 Website: Soon"
 
+    await st.edit(text=f"**--Bᴏᴛ SᴛᴀᴛᴜꜢ--** \n\n**⌚️ Bᴏᴛ Uᴩᴛɪᴍᴇ:** {uptime} \n**🐌 Cᴜʀʀᴇɴᴛ Pɪɴɢ:** `{time_taken_s:.3f} ᴍꜱ` \n**👭 Tᴏᴛᴀʟ UꜱᴇʀꜢ:** `{total_users}`\n{unique_message}\n{additional_info}\n{version}\n{support}\n{website}")
 
 #Restart to cancell all process 
 @Client.on_message(filters.private & filters.command("restart") & filters.user(Config.ADMIN))
