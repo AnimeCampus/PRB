@@ -24,23 +24,27 @@ def extract_episode_quality(input_text):
 
 # Function to rename media files
 async def rename_media_file(client, message, episode, quality):
-    file = getattr(message, message.media.value)
-    media = getattr(file, file.media.value)
+    if message.media:
+        file = getattr(message, message.media.value)
+        media = getattr(file, file.media.value)
 
-    new_filename = f"{file.file_name} {episode}-{quality}"
-    extn = file.file_name.rsplit('.', 1)[-1] if "." in file.file_name else "mkv"
-    new_name = new_filename + "." + extn
+        new_filename = f"{file.file_name} {episode}-{quality}"
+        extn = file.file_name.rsplit('.', 1)[-1] if "." in file.file_name else "mkv"
+        new_name = new_filename + "." + extn
 
-    # Rename the media file
-    # You can implement the file renaming logic here
-    # This is just a placeholder
-    renamed_file_path = f"downloads/{new_name}"
+        # Rename the media file
+        # You can implement the file renaming logic here
+        # This is just a placeholder
+        renamed_file_path = f"downloads/{new_name}"
 
-    # Move or rename the file to the new path
-    os.rename(file.file_path, renamed_file_path)
+        # Move or rename the file to the new path
+        os.rename(file.file_path, renamed_file_path)
 
-    # Now you have the renamed file in 'renamed_file_path'
-    # You can process and upload it as needed
+        # Now you have the renamed file in 'renamed_file_path'
+        # You can process and upload it as needed
+    else:
+        print("The message does not contain media.")
+
 
 # Bot command to initiate auto-renaming
 @Client.on_message(filters.command("Autorename", prefixes="/"))
