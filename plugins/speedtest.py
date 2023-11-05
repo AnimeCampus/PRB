@@ -1,93 +1,49 @@
-import os
-import speedtest
-import requests
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from config import Config
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+import time
 
 @Client.on_message(filters.command("speedtest") & filters.user(Config.ADMIN))
 async def run_speedtest(client: Client, message: Message):
-    m = await message.reply_text("⚡️ Running Server Speedtest")
+    m = await message.reply_text("⚡️ Running Speedtest")
 
-    try:
-        st = speedtest.Speedtest()
-        st.get_best_server()
-        download_speed = st.download() / 1024 / 1024  # Convert to Mbps
-        upload_speed = st.upload() / 1024 / 1024  # Convert to Mbps
-        ping = st.results.ping
-        result = st.results.dict()
-    except Exception as e:
-        await m.edit(str(e))  # Convert exception to string before editing
-        return
+    # Initialize a WebDriver (You need to install the appropriate WebDriver for your browser)
+    driver = webdriver.Chrome()
 
-    m = await m.edit("🔄 Sharing Speedtest Results")
+    # Open the fast.com website
+    driver.get("https://fast.com")
 
-    # Create an inline keyboard with two buttons for text and image options
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton("Text Results", callback_data="text_results"),
-                InlineKeyboardButton("Image Results", callback_data="image_results"),
-            ]
-        ]
+    # Wait for the test to complete (adjust this delay as needed)
+    time.sleep(30)
+
+    # Find the download speed element
+    download_speed_element = driver.find_element_by_id("speed-value")
+
+    # Get the download speed value
+    download_speed = download_speed_element.text
+
+    # Click the "Show more info" link to reveal upload speed
+    show_more_info_link = driver.find_element_by_id("show-more-details-link")
+    show_more_info_link.click()
+    time.sleep(5)  # Wait for the upload speed to be displayed
+
+    # Find the upload speed element
+    upload_speed_element = driver.find_element_by_id("upload-value")
+
+    # Get the upload speed value
+    upload_speed = upload_speed_element.text
+
+    # Capture a screenshot of the speed test results
+    driver.save_screenshot("speedtest_result.png")
+
+    # Close the browser
+    driver.quit()
+
+    # Send the results as an image
+    await m.delete()
+    await client.send_photo(
+        chat_id=message.chat.id,
+        photo="speedtest_result.png",
+        caption=f"🚀 Download Speed: {download_speed} Mbps\n🚀 Upload Speed: {upload_speed} Mbps",
     )
-
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
-        response = requests.get(result["share"], headers=headers)
-        response.raise_for_status()  # Raise exception for HTTP errors
-        content = response.content
-
-        path = "speedtest_result.png"  # Provide a local file name
-        with open(path, "wb") as file:
-            file.write(content)
-    except requests.exceptions.RequestException as req_err:
-        await m.edit(f"Error downloading: {req_err}")
-        return
-
-    await m.edit("Choose how you want to receive the results:", reply_markup=keyboard)
-
-@Client.on_callback_query(filters.regex("text_results"))
-async def send_text_results(bot, update):
-    user_id = update.from_user.id
-    await bot.answer_callback_query(update.id, text="Sending text results...")
-    # Extract the text results and send them to the user
-    result = get_speedtest_results()
-    await bot.send_message(user_id, result)
-
-@Client.on_callback_query(filters.regex("image_results"))
-async def send_image_results(bot, update):
-    user_id = update.from_user.id
-    await bot.answer_callback_query(update.id, text="Sending image results...")
-    # Send the image results to the user
-    path = "speedtest_result.png"
-    await bot.send_photo(user_id, photo=path, caption="SpeedTest Results")
-
-def get_speedtest_results():
-    try:
-        st = speedtest.Speedtest()
-        st.get_best_server()
-        download_speed = st.download() / 1024 / 1024
-        upload_speed = st.upload() / 1024 / 1024
-        ping = st.results.ping
-        result = st.results.dict()
-        isp = result["client"]["isp"]
-        country = result["client"]["country"]
-        server_name = result["server"]["name"]
-        server_country = result["server"]["country"]
-        server_sponsor = result["server"]["sponsor"]
-        output = f"""💡 <b>SpeedTest Results</b>
-        <u><b>Client:</b></u>
-        <b>ISP:</b> {isp}
-        <b>Country:</b> {country}
-        <u><b>Server:</b></u>
-        <b>Name:</b> {server_name}
-        <b>Country:</b> {server_country}, {server_sponsor}
-        -----------------------------------------------
-        ⚡️ <b>Ping:</b> {ping} ms
-        🚀 <b>Download Speed:</b> {download_speed:.2f} Mbps
-        🚀 <b>Upload Speed:</b> {upload_speed:.2f} Mbps"""
-        return output
-    except Exception as e:
-        return f"Error: {str(e)}"
